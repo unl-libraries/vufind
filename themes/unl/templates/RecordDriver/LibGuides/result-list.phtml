@@ -1,0 +1,18 @@
+<?
+  $url = $this->driver->getUniqueId();
+?>
+<div class="listentry col-xs-11">
+<span>field info<?=$this->fields['title']?></span>
+  <div class="resultItemLine1">
+    <a href="<?=$this->escapeHtmlAttr($url)?>" class="title">
+      <?=$this->record($this->driver)->getTitleHtml()?>
+      <? if (isset($this->fields['description'])
+            && !empty($this->fields['description'])
+        ) {
+           is_array($this->fields['description'])
+                ? $this->fields['description'] : [$this->fields['description']];
+        }
+?>
+    </a>
+  </div>
+</div>
