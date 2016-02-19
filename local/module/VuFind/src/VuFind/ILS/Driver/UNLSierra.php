@@ -424,12 +424,45 @@ class UNLSierra extends AbstractBase implements \VuFindHttp\HttpServiceAwareInte
                 $finalcallnumber = $this->processCallNumber($callnumber, $id);
 
                 $resultArray = pg_fetch_array($results1, 0);
-
+			/* status codes:
+			 * -	Available
+			 * a 	Ask at Circulation (available, but needs extra info)
+			 * b	At the Bindery (unavailable)
+			 * c	Online Access	(available)
+			 * d	Request item	(available - needs link to request item for LDRF, dsk, lus)
+			 * e	Ask at Spec (available but needs extra information)
+			 * f	FOR LOCATION ?
+			 * g	Not available (unavailable)
+			 * j	In use - Request via ILL (unavailable - provide request link)
+			 * k	New Book Shelf (available)
+			 * l	Lost (unavailalbe)
+			 * m	Missing (unavailable)
+			 * n	Missing (unavailable)
+			 * o	Library use only (available)
+			 * p	In process (unavailable) 
+			 * q	In use ask @ Circulation (available as Ask at Spec and circulation)
+			 * s	On search (unavailable)
+			 * t	In trainsit (unavailable)
+			 * w	withdrawn (unavailable)
+			 * y 	in transit MS (unavailable)
+			 * z	missing (unavailable)
+			 * $	missing (unavailable)
+			 * ! 	On hold shelf (unavailable)
+			 * # 	(unavailable)
+			 * u	Ask @ location (available)
+			 * x	Stats (unavailable)
+			 * *	In transit (unavailable) 
+			 */
                 if (($resultArray[0] == "-" && $resultArray[4] == null)
-                    || ($resultArray[0] == "o" && $resultArray[4] == null)
-			|| ($resultArray[0] == "a" && $resultArray[4] == null)
-			|| ($resultArray[0] == "d" && $resultArray[4] == null)
-			|| ($resultArray[0] == "e" && $resultArray[4] == null)
+                		|| ($resultArray[0] == "o" && $resultArray[4] == null)
+                		|| ($resultArray[0] == "a" && $resultArray[4] == null)
+                		|| ($resultArray[0] == "d" && $resultArray[4] == null)
+                		|| ($resultArray[0] == "e" && $resultArray[4] == null)
+                		|| ($resultArray[0] == "c" && $resultArray[4] == null)
+                		|| ($resultArray[0] == "k" && $resultArray[4] == null)
+                		|| ($resultArray[0] == "q" && $resultArray[4] == null)
+                		|| ($resultArray[0] == "u" && $resultArray[4] == null)
+                		
                 ) {
                     $availability = true;
                 } else {
@@ -518,7 +551,11 @@ class UNLSierra extends AbstractBase implements \VuFindHttp\HttpServiceAwareInte
                     || ($resultArray[0] == "o" && $resultArray[2] == null)
                 		|| ($resultArray[0] == "a" && $resultArray[2] == null)
                 		|| ($resultArray[0] == "d" && $resultArray[2] == null)
+                		|| ($resultArray[0] == "c" && $resultArray[2] == null)
                 		|| ($resultArray[0] == "e" && $resultArray[2] == null)
+                		|| ($resultArray[0] == "k" && $resultArray[2] == null)
+                		|| ($resultArray[0] == "q" && $resultArray[2] == null)
+                		|| ($resultArray[0] == "u" && $resultArray[2] == null)
                 		
                 ) {
                     $availability = true;
@@ -528,7 +565,7 @@ class UNLSierra extends AbstractBase implements \VuFindHttp\HttpServiceAwareInte
                 /* altering reserve for UNL's status 'a' for Ask at Circulation and Ask at Spec 
                  * (distinguish them later with the status passed */
                 $reserve = "N";
-                if (($resultArray[0] == "a" || $resultArray[0] == "e") && $resultArray[2] == null) $reserve = "Y";
+                if (($resultArray[0] == "a" || $resultArray[0] == "e" || $resultArray[0] == "q" || $resultArray[0] == "u") && $resultArray[2] == null) $reserve = "Y";
                 
                 /* Adding Request item (Web Bridge) - which is ILL -  for LDRF materials status of 'd' */
                 $checkILLRequest = false;
