@@ -114,7 +114,7 @@ class UNLSierra extends AbstractBase implements \VuFindHttp\HttpServiceAwareInte
             $this->db, $get_record_ids_query, [$this->idStrip($id)]
         );
         while ($record = pg_fetch_row($record_ids)) {
-            $itemRecords[] = $record[0];
+            if (!empty($record[0])) $itemRecords[] = $record[0];
         }
         return $itemRecords;
     }
@@ -394,7 +394,8 @@ class UNLSierra extends AbstractBase implements \VuFindHttp\HttpServiceAwareInte
             $itemIds = $this->getIds($id);
             // Use the database ids to get the item-level information (status,
             // location, and potentially call number) associated with that bib record
-            $query1 = "SELECT item_view.item_status_code, "
+            if (!empty($itemIds)){
+            		$query1 = "SELECT item_view.item_status_code, "
                     . "location_name.name, "
                     . "varfield_view.field_content, "
                     . "varfield_view.varfield_type_code, "
@@ -411,75 +412,77 @@ class UNLSierra extends AbstractBase implements \VuFindHttp\HttpServiceAwareInte
                     . "ON (item_view.id = checkout.item_record_id) "
                     . "WHERE item_view.id = $1 "
                     . "AND location_name.iii_language_id = '1';";
-            pg_prepare($this->db, "prep_query", $query1);
-            foreach ($itemIds as $item) {
-                $callnumber = null;
-                $results1 = pg_execute($this->db, "prep_query", [$item]);
-                while ($resultArray = pg_fetch_row($results1)) {
-                    if ($resultArray[3] == "c") {
-                        $callnumber = $resultArray[2];
-                    }
-                }
-
-                $finalcallnumber = $this->processCallNumber($callnumber, $id);
-
-                $resultArray = pg_fetch_array($results1, 0);
-			/* status codes:
-			 * -	Available
-			 * a 	Ask at Circulation (available, but needs extra info)
-			 * b	At the Bindery (unavailable)
-			 * c	Online Access	(available)
-			 * d	Request item	(available - needs link to request item for LDRF, dsk, lus)
-			 * e	Ask at Spec (available but needs extra information)
-			 * f	FOR LOCATION ?
-			 * g	Not available (unavailable)
-			 * j	In use - Request via ILL (unavailable - provide request link)
-			 * k	New Book Shelf (available)
-			 * l	Lost (unavailalbe)
-			 * m	Missing (unavailable)
-			 * n	Missing (unavailable)
-			 * o	Library use only (available)
-			 * p	In process (unavailable) 
-			 * q	In use ask @ Circulation (available as Ask at Spec and circulation)
-			 * s	On search (unavailable)
-			 * t	In trainsit (unavailable)
-			 * w	withdrawn (unavailable)
-			 * y 	in transit MS (unavailable)
-			 * z	missing (unavailable)
-			 * $	missing (unavailable)
-			 * ! 	On hold shelf (unavailable)
-			 * # 	(unavailable)
-			 * u	Ask @ location (available)
-			 * x	Stats (unavailable)
-			 * *	In transit (unavailable) 
-			 */
-                if (($resultArray[0] == "-" && $resultArray[4] == null)
-                		|| ($resultArray[0] == "o" && $resultArray[4] == null)
-                		|| ($resultArray[0] == "a" && $resultArray[4] == null)
-                		|| ($resultArray[0] == "d" && $resultArray[4] == null)
-                		|| ($resultArray[0] == "e" && $resultArray[4] == null)
-                		|| ($resultArray[0] == "c" && $resultArray[4] == null)
-                		|| ($resultArray[0] == "k" && $resultArray[4] == null)
-                		|| ($resultArray[0] == "q" && $resultArray[4] == null)
-                		|| ($resultArray[0] == "u" && $resultArray[4] == null)
-                		
-                ) {
-                    $availability = true;
-                } else {
-                    $availability = false;
-                }
-                $location = $this->getLocationText($resultArray[1], $resultArray[5]);
-                $itemInfo = [
-                    "id" => $id,
-                    "status" => $resultArray[0],
-                    "location" => $location,
-                    "reserve" => "N",
-                    "callnumber" => $finalcallnumber,
-                    "availability" => $availability
-                    ];
-
-                $status[] = $itemInfo;
+	            pg_prepare($this->db, "prep_query", $query1);
+	            foreach ($itemIds as $item) {
+	                $callnumber = null;
+	                $results1 = pg_execute($this->db, "prep_query", [$item]);
+	                while ($resultArray = pg_fetch_row($results1)) {
+	                    if ($resultArray[3] == "c") {
+	                        $callnumber = $resultArray[2];
+	                    }
+	                }
+	
+	                $finalcallnumber = $this->processCallNumber($callnumber, $id);
+	
+	                $resultArray = pg_fetch_array($results1, 0);
+				/* status codes:
+				 * -	Available
+				 * a 	Ask at Circulation (available, but needs extra info)
+				 * b	At the Bindery (unavailable)
+				 * c	Online Access	(available)
+				 * d	Request item	(available - needs link to request item for LDRF, dsk, lus)
+				 * e	Ask at Spec (available but needs extra information)
+				 * f	FOR LOCATION ?
+				 * g	Not available (unavailable)
+				 * j	In use - Request via ILL (unavailable - provide request link)
+				 * k	New Book Shelf (available)
+				 * l	Lost (unavailalbe)
+				 * m	Missing (unavailable)
+				 * n	Missing (unavailable)
+				 * o	Library use only (available)
+				 * p	In process (unavailable) 
+				 * q	In use ask @ Circulation (available as Ask at Spec and circulation)
+				 * s	On search (unavailable)
+				 * t	In trainsit (unavailable)
+				 * w	withdrawn (unavailable)
+				 * y 	in transit MS (unavailable)
+				 * z	missing (unavailable)
+				 * $	missing (unavailable)
+				 * ! 	On hold shelf (unavailable)
+				 * # 	(unavailable)
+				 * u	Ask @ location (available)
+				 * x	Stats (unavailable)
+				 * *	In transit (unavailable) 
+				 */
+	                if (($resultArray[0] == "-" && $resultArray[4] == null)
+	                		|| ($resultArray[0] == "o" && $resultArray[4] == null)
+	                		|| ($resultArray[0] == "a" && $resultArray[4] == null)
+	                		|| ($resultArray[0] == "d" && $resultArray[4] == null)
+	                		|| ($resultArray[0] == "e" && $resultArray[4] == null)
+	                		|| ($resultArray[0] == "c" && $resultArray[4] == null)
+	                		|| ($resultArray[0] == "k" && $resultArray[4] == null)
+	                		|| ($resultArray[0] == "q" && $resultArray[4] == null)
+	                		|| ($resultArray[0] == "u" && $resultArray[4] == null)
+	                		
+	                ) {
+	                    $availability = true;
+	                } else {
+	                    $availability = false;
+	                }
+	                $location = $this->getLocationText($resultArray[1], $resultArray[5]);
+	                $itemInfo = [
+	                    "id" => $id,
+	                    "status" => $resultArray[0],
+	                    "location" => $location,
+	                    "reserve" => "N",
+	                    "callnumber" => $finalcallnumber,
+	                    "availability" => $availability
+	                    ];
+	
+	                $status[] = $itemInfo;
+	            }	         
             }
+            
             return $status;
         } catch (\Exception $e) {
             throw new ILSException($e->getMessage());
@@ -508,90 +511,97 @@ class UNLSierra extends AbstractBase implements \VuFindHttp\HttpServiceAwareInte
             $itemIds = $this->getIds($id);
             // Use the database ids to get the item-level information (status,
             // location, and potentially call number) associated with that bib record
-            $query1 = "SELECT
-                        item_view.item_status_code,
-                        location_name.name,
-                        checkout.due_gmt,
-                        varfield_view.field_content,
-                        varfield_view.varfield_type_code,
-                        item_view.record_creation_date_gmt
-                        FROM
-                        sierra_view.item_view
-                        LEFT JOIN sierra_view.location
-                        ON (item_view.location_code = location.code)
-                        LEFT JOIN sierra_view.location_name
-                        ON (location.id = location_name.location_id)
-                        LEFT JOIN sierra_view.checkout
-                        ON (item_view.id = checkout.item_record_id)
-                        LEFT JOIN sierra_view.varfield_view
-                        ON (item_view.id = varfield_view.record_id)
-                        WHERE item_view.id = $1
-                        AND location_name.iii_language_id = '1';";
-            pg_prepare($this->db, "prep_query", $query1);
-            foreach ($itemIds as $item) {
-                $callnumber = null;
-		$barcode = null;
-		$number = null;
-                $results1 = pg_execute($this->db, "prep_query", [$item]);
-                while ($row1 = pg_fetch_row($results1)) {
-                    if ($row1[4] == "b") {
-                        $barcode = $row1[3];
-                    } elseif ($row1[4] == "c") {
-                        $callnumber = $row1[3];
-                    } elseif ($row1[4] == "v") {
-                        $number = $row1[3];
-                    }
-                }
-
-                $finalcallnumber = $this->processCallNumber($callnumber, $id);
-
-                $resultArray = pg_fetch_array($results1, 0);
-
-                if (($resultArray[0] == "-" && $resultArray[2] == null)
-                    || ($resultArray[0] == "o" && $resultArray[2] == null)
-                		|| ($resultArray[0] == "a" && $resultArray[2] == null)
-                		|| ($resultArray[0] == "d" && $resultArray[2] == null)
-                		|| ($resultArray[0] == "c" && $resultArray[2] == null)
-                		|| ($resultArray[0] == "e" && $resultArray[2] == null)
-                		|| ($resultArray[0] == "k" && $resultArray[2] == null)
-                		|| ($resultArray[0] == "q" && $resultArray[2] == null)
-                		|| ($resultArray[0] == "u" && $resultArray[2] == null)
-                		
-                ) {
-                    $availability = true;
-                } else {
-                    $availability = false;
-                }
-                /* altering reserve for UNL's status 'a' for Ask at Circulation and Ask at Spec 
-                 * (distinguish them later with the status passed */
-                $reserve = "N";
-                if (($resultArray[0] == "a" || $resultArray[0] == "e" || $resultArray[0] == "q" || $resultArray[0] == "u") && $resultArray[2] == null) $reserve = "Y";
-                
-                /* Adding Request item (Web Bridge) - which is ILL -  for LDRF materials status of 'd' */
-                $checkILLRequest = false;
-                $illRequestLink = false;
-                if ($resultArray[0] == "d" && $resultArray[2] == null) {
-                	$illRequestLink = 'https://library.unl.edu/webbridge*eng/showresource';
-                }
-                
-                $location = $this->getLocationText($resultArray[1], $resultArray[5]);
-                $itemInfo = [
-                    "id" => $id,
-                    "availability" => $availability,
-                    "status" => $resultArray[0],
-                    "location" => $location,
-                    "reserve" => $reserve,
-                	"checkILLRequest" => $checkILLRequest,
-					"ILLRequestLink" =>$illRequestLink,               		
-                    "callnumber" => $finalcallnumber,
-                    "duedate" => $resultArray[2],
-                    "returnDate" => false,
-                    "number" => $number,
-                    "barcode" => $barcode
-                    ];
-
-                $holdings[] = $itemInfo;
-            }
+            if (!empty($itemIds)){
+	            $query1 = "SELECT
+	                        item_view.item_status_code,
+	                        location_name.name,
+	                        checkout.due_gmt,
+	                        varfield_view.field_content,
+	                        varfield_view.varfield_type_code,
+	                        item_view.record_creation_date_gmt
+	                        FROM
+	                        sierra_view.item_view
+	                        LEFT JOIN sierra_view.location
+	                        ON (item_view.location_code = location.code)
+	                        LEFT JOIN sierra_view.location_name
+	                        ON (location.id = location_name.location_id)
+	                        LEFT JOIN sierra_view.checkout
+	                        ON (item_view.id = checkout.item_record_id)
+	                        LEFT JOIN sierra_view.varfield_view
+	                        ON (item_view.id = varfield_view.record_id)
+	                        WHERE item_view.id = $1
+	                        AND location_name.iii_language_id = '1';";
+	            pg_prepare($this->db, "prep_query", $query1);
+	            
+	            foreach ($itemIds as $item) {
+	                $callnumber = null;
+					$barcode = null;
+					$number = null;
+	                $results1 = pg_execute($this->db, "prep_query", [$item]);
+	                while ($row1 = pg_fetch_row($results1)) {
+	                    if ($row1[4] == "b") {
+	                        $barcode = $row1[3];
+	                    } elseif ($row1[4] == "c") {
+	                        $callnumber = $row1[3];
+	                    } elseif ($row1[4] == "v") {
+	                        $number = $row1[3];
+	                    }
+	                }
+	
+	                $finalcallnumber = $this->processCallNumber($callnumber, $id);
+	
+	                $resultArray = pg_fetch_array($results1, 0);
+					
+	                if (($resultArray[0] == "-" && $resultArray[2] == null)
+	                    || ($resultArray[0] == "o" && $resultArray[2] == null)
+	                		|| ($resultArray[0] == "a" && $resultArray[2] == null)
+	                		|| ($resultArray[0] == "d" && $resultArray[2] == null)
+	                		|| ($resultArray[0] == "c" && $resultArray[2] == null)
+	                		|| ($resultArray[0] == "e" && $resultArray[2] == null)
+	                		|| ($resultArray[0] == "k" && $resultArray[2] == null)
+	                		|| ($resultArray[0] == "q" && $resultArray[2] == null)
+	                		|| ($resultArray[0] == "u" && $resultArray[2] == null)
+	                		
+	                ) {
+	                    $availability = true;
+	                } else {
+	                    $availability = false;
+	                }
+	                /* altering reserve for UNL's status 'a' for Ask at Circulation and Ask at Spec 
+	                 * (distinguish them later with the status passed */
+	                $reserve = "N";
+	                if (($resultArray[0] == "a" || $resultArray[0] == "e" || $resultArray[0] == "q" || $resultArray[0] == "u") && $resultArray[2] == null) $reserve = "Y";
+	                
+	                /* Adding Request item (Web Bridge) - which is ILL -  for LDRF materials status of 'd' */
+	                $checkILLRequest = false;
+	                $illRequestLink = false;
+	                if ($resultArray[0] == "d" && $resultArray[2] == null) {
+	                	$illRequestLink = 'https://library.unl.edu/webbridge*eng/showresource';
+	                }
+	                
+	                $location = $this->getLocationText($resultArray[1], $resultArray[5]);
+	                $itemInfo = [
+	                    "id" => $id,
+	                    "availability" => $availability,
+	                    "status" => $resultArray[0],
+	                    "location" => $location,
+	                    "reserve" => $reserve,
+	                	"checkILLRequest" => $checkILLRequest,
+						"ILLRequestLink" =>$illRequestLink,               		
+	                    "callnumber" => $finalcallnumber,
+	                    "duedate" => $resultArray[2],
+	                    "returnDate" => false,
+	                    "number" => $number,
+	                    "barcode" => $barcode
+	                    ];
+	
+	                $holdings[] = $itemInfo;
+	            }
+           }
+           else{
+           		$finalcallnumber = $this->processCallNumber(null, $id);
+           		$holdings[]=["id"=>$id,"callnumber"=>$finalcallnumber,"availability"=>false,"location"=>false];
+           } 
             return $holdings;
         } catch (\Exception $e) {
             throw new ILSException($e->getMessage());
