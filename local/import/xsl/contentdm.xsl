@@ -54,7 +54,7 @@
                 </xsl:if>
 
                 <!-- FORMAT -->
-                <field name="format">Online</field>
+                <field name="format">Online Multimedia</field>
 
                 <!-- AUTHOR -->
                 <xsl:if test="dc:creator">
@@ -119,12 +119,19 @@
                 </xsl:if>
 
                 <!-- URL -->
-                <xsl:if test="dc:identifier">
+                <xsl:choose>
+                   <xsl:when test="contains(dc:identifier,'http://')">
                     <field name="url">
                         <xsl:value-of select="dc:identifier[normalize-space()]"/>
                     </field>
-                </xsl:if>
-                <field name="thumnbail">
+                </xsl:when>
+                <xsl:otherwise>
+           <!--      	<field name="identifier">
+                		<xsl:value-of select="dc:identifier[normalize-space()]"/>
+                		</field> -->
+                </xsl:otherwise>
+                </xsl:choose>
+                <field name="thumbnail">
                 	<xsl:value-of select="concat('http://contentdm.unl.edu/cgi-bin/thumbnail.exe?CISOROOT=/',set,'&amp;CISOPTR=',substring-after(identifier,'_'))"/>
                 </field>
             </doc>
