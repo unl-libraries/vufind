@@ -1,0 +1,132 @@
+/**
+ * Custom format determination script.
+ *
+ * This can be used to override built-in SolrMarc custom functions.  If you change
+ * this script, you will need to activate it in import/marc_local.properties before
+ * it will be applied during indexing.
+ */
+import org.marc4j.marc.Record;
+import org.marc4j.marc.ControlField;
+import org.marc4j.marc.DataField;
+import org.apache.log4j.Logger;
+import org.solrmarc.tools.Utils;
+protected static Logger logger = Logger.getLogger(Utils.class.getName());
+
+/**
+ * Determine Record Format(s)
+ *
+ * @param  Record          record
+ * @return Set     format of record
+ */
+public Set getFormat(Record record){
+    Set result = new LinkedHashSet();
+    //String leader = record.getLeader().toString();
+    //char leaderBit;
+    //ControlField fixedField = (ControlField) record.getVariableField("008");
+    DataField title = (DataField) record.getVariableField("245");
+    
+
+    // check if there's an h in the 245
+    if (title != null) {
+        if (title.getSubfield('h') != null){
+            if (title.getSubfield('h').getData().toLowerCase().contains("[electronic resource]")) {
+                result.add("Electronic");
+                return result;
+            }
+        }
+    }
+	// we really want to use the bcode1 field which we had stored in the 998d field
+      
+    DataField bcode = (DataField) record.getVariableField("998"); 
+    if (bcode != null) {
+    	if (bcode.getSubfield('d') != null){
+    		char bcode1 = bcode.getSubfield('d').getData().toUpperCase().charAt(0);
+    		switch (bcode1){
+    			case '-':
+    				result.add("Other");
+    				break;
+    			case 'A':
+    				result.add("Print Material");
+    				break;    			
+    			case 'B':
+    				result.add("Archive/Manuscript");
+    				break;
+    			case 'C':
+    				result.add("Music Scores");
+    				break;
+    			case 'D':
+    				result.add("Computer Disc");
+    				break;
+    			case 'E':
+    				result.add("Map");
+    				break;
+    			case 'F':
+    				result.add("Map Manuscript");
+    				break;
+    			case 'G':
+    				result.add("Visual Material");
+    				break;
+    			case 'H':
+    				result.add("Microforms");
+    				break;
+    			case 'I':
+    				result.add("Spoken Recording");
+    				break;
+    			case 'J':
+    				result.add("Music CD");
+    				break;
+    			case 'K':
+    				result.add("2-Dimensional Material");
+    				break;
+    			case 'L':
+    				result.add("Music Record/Tape");
+    				break;
+    			case 'M':
+    				result.add("Electronic Resource");
+    				break;
+    			case 'N':
+    				result.add("SPC Instructional Material");
+    				break;
+    			case 'O':
+    				result.add("Kit");
+    				break;
+    			case 'P':
+    				result.add("Mixed Material");
+    				break;
+    			case 'Q':
+    				result.add("Thesis");
+    				break;
+    			case 'R':
+    				result.add("3-Dimensional Material");
+    				break;
+    			case 'S':
+    				result.add("Slide");
+    				break;
+    			case 'T':
+    				result.add("Dissertation");
+    				break;
+    			case 'U':
+    				result.add("Electronic/Print");
+    				break;
+    			case 'V':
+    				result.add("Electronic/Print/MForm");
+    				break;
+    			case 'W':
+    				result.add("Electronic/MForm");
+    				break;
+    			case 'X':
+    				result.add("Print/MForm");
+    				break;
+    		}
+    	}
+    }
+
+    // Nothing worked!
+    if (result.isEmpty()) {
+        result.add("Unknown");
+    }
+    
+    return result;
+}
+
+
