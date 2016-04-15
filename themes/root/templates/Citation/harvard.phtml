@@ -1,0 +1,10 @@
+<!-- format of harvard style is 
+Author(s) family name, Initial(s) Year of publication, Title in italics, Publisher, Place of publication.
+
+Multiple Authors: name, Initial, last name, initial, & last name, initials, Title in italics, .... etc...
+  
+-->
+<? if (!empty($this->authors)): ?><?=preg_replace('/\.[\s]*/','',$this->escapeHtml($this->authors))?> <? endif; ?>
+<? if (!empty($this->year)): ?><?=$this->escapeHtml($this->year)?>, <? endif; ?>
+<span style="font-style:italic;"><?= preg_replace('/$\./',', ',$this->escapeHtml($this->title))?></span> 
+<? if (!empty($this->publisher)): ?><?=$this->escapeHtml($this->publisher)?><? endif; ?>
