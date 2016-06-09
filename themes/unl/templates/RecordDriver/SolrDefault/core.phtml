@@ -91,17 +91,19 @@
         </td>
       </tr>
       <? endif; ?>
-	  
-      <? $altTitles = $this->driver->getAltTitles(); ?>
-      <? if (!empty($altTitles)): ?>
-      <tr>
-        <th>Alternate Title:</th>
-        <td>
-          <? foreach($altTitles as $field): ?>
-            <?=$field?><br/>
-          <? endforeach; ?>
-        </td>
-      </tr>
+      
+	  <? if (method_exists($this->driver, getAltTitles)):?>
+	      <? $altTitles = $this->driver->getAltTitles(); ?>
+	      <? if (!empty($altTitles)): ?>
+	      <tr>
+	        <th>Alternate Title:</th>
+	        <td>
+	          <? foreach($altTitles as $field): ?>
+	            <?=$field?><br/>
+	          <? endforeach; ?>
+	        </td>
+	      </tr>
+	      <? endif; ?>
       <? endif; ?>
 
       <? $authors = $this->driver->getDeduplicatedAuthors(); ?>
@@ -243,7 +245,32 @@
         </td>
       </tr>
       <? endif; ?>
-
+      
+      <!--  adding eresource Notes -->
+      <!--  general note -->
+      <? $publicNotes = $this->driver->getGeneralNotes();?>
+      <? if (!empty($publicNotes)):?>
+      	<tr>
+      		<th>Public Notes</th>
+      		<td>
+      			<? foreach ($publicNotes as $note):?>
+      				<?=$this->escapeHtml($note)?>
+      			<? endforeach; ?>
+      		</td>
+      	</tr>
+      <? endif; ?>
+      <!--  authorized user note -->
+      <? if (method_exists($this->driver, getAuthorizedUserNote)):?>
+      	<? $authNote = $this->driver->getAuthorizedUserNote()?>
+      	<? if (isset($authNote)):?>
+      		<tr>
+      			<th>Authorized Users</th>
+      			<td>
+      				<?=$this->escapeHtml($authNote)?>
+      			</td>
+      		</tr>		
+      	<? endif; ?>
+	  <? endif;?>
       <? $recordLinks = $this->driver->getAllRecordLinks(); ?>
       <? if(!empty($recordLinks)): ?>
         <tr>

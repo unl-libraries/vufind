@@ -475,7 +475,22 @@ class SolrDefault extends AbstractBase
     public function getGeneralNotes()
     {
         // Not currently stored in the Solr index
-        return [];
+        // except for eresources - custom VufindUNL
+    	return isset($this->fields['publicNote_str_mv']) ?
+    	$this->fields['publicNote_str_mv'] : [];
+    
+    }
+    
+    /** 
+     * Get the Authorized users information as a string
+     * Part of custom module VufindUNL
+     * @return string
+     * 
+     */
+    public function getAuthorizedUserNote()
+    {
+    	return (isset($this->fields['authUsers_str'])) ?
+    	$this->fields['authUsers_str'] : '';
     }
 
     /**
@@ -1800,5 +1815,7 @@ class SolrDefault extends AbstractBase
             && !empty($this->fields['hierarchy_parent_id'])
             ? $this->fields['hierarchy_parent_id'][0] : '';
     }
+    
+    
 }
 
