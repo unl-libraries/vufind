@@ -92,7 +92,7 @@
       </tr>
       <? endif; ?>
       
-	  <? if (method_exists($this->driver, getAltTitles)):?>
+	  <? if (method_exists($this->driver, 'getAltTitles')):?>
 	      <? $altTitles = $this->driver->getAltTitles(); ?>
 	      <? if (!empty($altTitles)): ?>
 	      <tr>
@@ -260,9 +260,9 @@
       	</tr>
       <? endif; ?>
       <!--  authorized user note -->
-      <? if (method_exists($this->driver, getAuthorizedUserNote)):?>
+      <? if (method_exists($this->driver, 'getAuthorizedUserNote')):?>
       	<? $authNote = $this->driver->getAuthorizedUserNote()?>
-      	<? if (isset($authNote)):?>
+      	<? if (!empty($authNote)):?>
       		<tr>
       			<th>Authorized Users</th>
       			<td>
