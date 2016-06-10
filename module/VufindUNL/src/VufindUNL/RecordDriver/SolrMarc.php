@@ -94,5 +94,34 @@ class SolrMarc extends \VuFind\RecordDriver\SolrMarc
 		}
 		return $arr;
 	}
+	
+	/**
+	 * Get general notes on the record.
+	 *
+	 * @return array
+	 */
+	public function getGeneralNotes()
+	{
+		// Not currently stored in the Solr index
+		// except for eresources - custom VufindUNL
+		return !empty($this->getFieldArray('500'))?
+				$this->getFieldArray('500'):
+				isset($this->fields['publicNote_str_mv']) ?
+		$this->fields['publicNote_str_mv'] : [];
+	
+	}
+	
+	/**
+	 * Get the Authorized users information as a string
+	 * Part of custom module VufindUNL
+	 * @return string
+	 *
+	 */
+	public function getAuthorizedUserNote()
+	{
+		return (isset($this->fields['authUsers_str'])) ?
+		$this->fields['authUsers_str'] : '';
+	}
+	
 }
 
