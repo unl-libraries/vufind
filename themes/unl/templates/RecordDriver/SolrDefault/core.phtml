@@ -95,7 +95,7 @@
       </tr>
       <? endif; ?>
 	  
-      <? if (method_exists($this->driver, getAltTitles)):?>
+      <? if (method_exists($this->driver, 'getAltTitles')):?>
 	<? $altTitles = $this->driver->getAltTitles(); ?>
       	<? if (!empty($altTitles)): ?>
 	      <tr>
@@ -252,7 +252,35 @@
         </td>
       </tr>
       <? endif; ?>
-
+      
+  <!--  adding eresource Notes -->
+      <!--  general note -->
+      <? if (method_exists($this->driver, 'getPublicNotes')):?>
+      <? $publicNotes = $this->driver->getPublicNotes();?>
+      <? if (!empty($publicNotes)):?>
+      	<tr>
+      		<th>Public Notes</th>
+      		<td>
+      			<? foreach ($publicNotes as $note):?>
+      				<?=$this->escapeHtml($note)?>
+      			<? endforeach; ?>
+      		</td>
+      	</tr>
+      <? endif; ?>
+      <? endif; ?>
+      <!--  authorized user note -->
+      <? if (method_exists($this->driver, 'getAuthorizedUserNote')):?>
+      	<? $authNote = $this->driver->getAuthorizedUserNote()?>
+      	<? if (!empty($authNote)):?>
+      		<tr>
+      			<th>Authorized Users</th>
+      			<td>
+      				<?=$this->escapeHtml($authNote)?>
+      			</td>
+      		</tr>		
+      	<? endif; ?>
+	  <? endif;?>
+	  
       <? $recordLinks = $this->driver->getAllRecordLinks(); ?>
       <? if(!empty($recordLinks)): ?>
         <tr>

@@ -28,6 +28,24 @@ class Factory
         return $driver;
     }
 
+    /**
+     * Factory for SolrDefault record driver.
+     *
+     * @param ServiceManager $sm Service manager.
+     *
+     * @return SolrDefault
+     */
+    public static function getSolrDefault(\Zend\ServiceManager\ServiceManager $sm)
+    {
+        $driver = new \VufindUNL\RecordDriver\SolrDefault(
+            $sm->getServiceLocator()->get('VuFind\Config')->get('config'),
+            null,
+            $sm->getServiceLocator()->get('VuFind\Config')->get('searches')
+        );
+        $driver->attachSearchService($sm->getServiceLocator()->get('VuFind\Search'));
+        return $driver;
+    }
+
 
 }
 
