@@ -71,13 +71,25 @@
                 <!-- TITLE -->
                 <xsl:if test="title[normalize-space()]">
                     <field name="title">
-                        <xsl:value-of select="title[normalize-space()]"/>
+                    <!-- Calling the template that removes tags -->
+						<xsl:call-template name="remove-html">
+						    <xsl:with-param name="text" select="title[normalize-space()]"/>						
+						</xsl:call-template>                        
                     </field>
                     <field name="title_short">
-                        <xsl:value-of select="title[normalize-space()]"/>
+                        <xsl:call-template name="remove-html">
+						    <xsl:with-param name="text" select="title[normalize-space()]"/>						
+						</xsl:call-template>   
                     </field>
                     <field name="title_full">
-                        <xsl:value-of select="title[normalize-space()]"/>
+                        <xsl:call-template name="remove-html">
+						    <xsl:with-param name="text" select="title[normalize-space()]"/>						
+						</xsl:call-template>   
+                    </field>
+                    <field name="title_sort">
+                        <xsl:call-template name="remove-html">
+						    <xsl:with-param name="text" select="title[normalize-space()]"/>						
+						</xsl:call-template>   
                     </field>
                 </xsl:if>
                 
@@ -143,4 +155,37 @@
 	</xsl:for-each>
 	</add>
     </xsl:template>
+    
+    
+
+
+<!-- This will remove the tag -->
+
+<xsl:template name="remove-html">
+
+    <xsl:param name="text"/>
+
+    <xsl:choose>
+
+        <xsl:when test="contains($text, '&lt;')">
+
+            <xsl:value-of select="substring-before($text, '&lt;')"/>
+
+            <xsl:call-template name="remove-html">
+
+                    <xsl:with-param name="text" select="substring-after($text, '&gt;')"/>
+
+            </xsl:call-template>
+
+        </xsl:when>
+
+        <xsl:otherwise>
+
+            <xsl:value-of select="$text"/>
+
+        </xsl:otherwise>
+
+    </xsl:choose>
+
+</xsl:template>
 </xsl:stylesheet>
