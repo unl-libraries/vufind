@@ -1,13 +1,19 @@
-<?
+ <link rel="stylesheet" href="//code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
+  <?
     // Set up convenience variables:
     $account = $this->auth()->getManager();
     $user = $account->isLoggedIn();
-    $holdings = $this->driver->getRealTimeHoldings();
     $openUrl = $this->openUrl($this->driver, 'holdings');
     $openUrlActive = $openUrl->isActive();
     // Account for replace_other_urls setting
     $urls = $this->record($this->driver)->getLinkDetails($openUrlActive);
     $offlineMode = $this->ils()->getOfflineMode();
+     try {
+        $holdings = $this->driver->getRealTimeHoldings();
+    } catch (\VuFind\Exception\ILS $e) {
+        $holdings = [];
+        $offlineMode = 'ils-offline';
+    }
     // Set page title.
     $this->headTitle($this->translate('Holdings') . ': ' . $this->driver->getBreadcrumb());
 	
@@ -40,24 +46,44 @@
 <? $holdingTitleHold = $this->driver->tryMethod('getRealTimeTitleHold'); if (!empty($holdingTitleHold)): ?>
     <a class="placehold modal-link" title="<?=$this->transEsc('request_place_text')?>" href="<?=$this->recordLink()->getRequestUrl($holdingTitleHold)?>"><i class="fa fa-flag"></i>&nbsp;<?=$this->transEsc('title_hold_place')?></a>
 <? endif; ?>
+ 
+ <div id="holdings_tabs">
+<ul>
 <? if (!empty($urls) || $openUrlActive): ?>
-  <h3><?=$this->transEsc("Internet")?></h3>
+  <li><a href="#holdings_tab-internet"><?=$this->transEsc("Internet")?></a></li>
+<? endif; ?>
+
+<? $h_counter=1;?>
+<? if (count($holdings) > 0): ?>
+
+<? endif; ?>
+<? foreach ($holdings as $holding): ?>
+<? if ($holding['location'] != 'Via INTERNET'):?>
+<li><a href="#holdings_tab-<?=$h_counter?>">
+  <? $locationText = $this->transEsc('location_' . $holding['location'], array(), $holding['location']); ?>
+  <!-- not using  the  $holding['locationhref'] value to create a link so we can keep the tabs-->
+    <?=$locationText?>
+</a></li>
+<? endif; ?>
+<? $h_counter++;?>
+<? endforeach; ?>
+
+</ul>
+
+<? if (!empty($urls) || $openUrlActive): ?>
+<div id="holdings_tab-internet">
   <? if (!empty($urls)): ?>
     <? foreach ($urls as $current): ?>
       <a href="<?=$this->escapeHtmlAttr($this->proxyUrl($current['url']))?>"><?=$this->escapeHtml($current['desc'])?></a><br/>
     <? endforeach; ?>
   <? endif; ?>
   <? if ($openUrlActive): ?><?=$openUrl->renderTemplate()?><? endif; ?>
-<? endif; ?>
+</div>
+ <? endif; ?>
+ <? $h_counter=1;?>
 <? foreach ($holdings as $holding): ?>
-<h3>
-  <? $locationText = $this->transEsc('location_' . $holding['location'], array(), $holding['location']); ?>
-  <? if (isset($holding['locationhref']) && $holding['locationhref']): ?>
-    <a href="<?=$holding['locationhref']?>" target="_blank"><?=$locationText?></a>
-  <? else: ?>
-    <?=$locationText?>
-  <? endif; ?>
-</h3>
+<? if ($holding['location'] != 'Via INTERNET'):?>
+<div id="holdings_tab-<?=$h_counter?>">
 <table class="table table-striped" summary="<?=$this->transEsc('Holdings details from')?> <?=$this->transEsc($holding['location'])?>">
   <? $callNos = $this->tab->getUniqueCallNumbers($holding['items']); if (!empty($callNos)): ?>
   <tr>
@@ -80,7 +106,7 @@
           <? endforeach; ?>
         </td>
       </tr>
-    <? endif; ?>
+    <? endif; ?>    
   <? endforeach; ?>
   <? foreach ($holding['items'] as $row): ?>
     <? $check = (isset($row['check']) && $row['check']); ?>
@@ -88,7 +114,7 @@
     <? $checkILLRequest = (isset($row['checkILLRequest']) && $row['checkILLRequest']); ?>
     <? if (isset($row['barcode']) && $row['barcode'] != ""): ?>
       <tr vocab="http://schema.org/" typeof="Offer">
-        <th><?=$this->transEsc("Copy")?> <?=$this->escapeHtml($row['number'])?></th>
+        <th><!--<?=$this->transEsc("Copy")?>--> <?=$this->escapeHtml($row['number'])?></th>
         <td>
           <? if ($row['reserve'] == "Y"): ?>
             <link property="availability" href="http://schema.org/InStoreOnly" />
@@ -117,7 +143,7 @@
 			  		<? $pubName = $publications[0]->getName(); ?>
 			  		<? $pubDate = $publications[0]->getDate(); ?>
 			  	<? endif; ?> 
-              	<? $illiadURL = urlencode("&aulast=".rawurlencode($this->escapeHtml($authors['main']))."&title=".rawurlencode($this->driver->getShortTitle(). ' ' . $this->driver->getSubtitle())."&date=".$pubDate."&pub=".$pubName."&edition=".$this->driver->getEdition()."&ESPNumber=".$this->driver->getCleanOCLCNum()."&isbn=".$this->driver->getCleanISBN()); ?>
+              	<? $illiadURL = urlencode("&aulast=".rawurlencode(($authors['main']))."&title=".rawurlencode($this->driver->getShortTitle(). ' ' . $this->driver->getSubtitle())."&date=".$pubDate."&pub=".$pubName."&edition=".$this->driver->getEdition()."&ESPNumber=".$this->driver->getCleanOCLCNum()."&isbn=".$this->driver->getCleanISBN()); ?>
       			<? $webbridgeLink = $row['ILLRequestLink'].'?returnurl=http://'.$_SERVER['HTTP_HOST'].$this->recordLink()->getUrl($this->driver->getUniqueId()).'&resurl=https%3A%2F%2Funl.illiad.oclc.org%2Filliad%2Filliad.dll%2FOpenURL%3Fsid%3DUNLcat%26genre%3DBook'.$illiadURL.'&resname=Request+Item&linkid=0&linkloc=item'?>
                 <a class="<?=$checkILLRequest ? 'checkILLRequest ' : ''?>inlineblock modal-link placeILLRequest" href="<?=$this->recordLink()->getRequestUrl($webbridgeLink)?>"  title="<?=$this->transEsc("Request item")?>">&nbsp;<?=$this->transEsc("Request item")?></a>
               <? endif; ?>
@@ -164,8 +190,11 @@
     </tr>
   <? endif; ?>
 </table>
+</div>
+<? endif; ?> <!--  end if location is Via INTERNET -->
+<? $h_counter++;?>
 <? endforeach; ?>
-
+</div> <!--  end of holdings_tabs div -->
 <? $history = $this->driver->getRealTimeHistory(); ?>
 <? if (is_array($history) && !empty($history)): ?>
 <h3><?=$this->transEsc("Most Recent Received Issues")?></h3>
@@ -175,3 +204,12 @@
   <? endforeach; ?>
 </table>
 <? endif; ?>
+
+
+<script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+<? if (count($holdings) > 0): ?>
+<script>
+$(function() {
+    $( "#holdings_tabs" ).tabs();
+});</script>
+<? endif;?>

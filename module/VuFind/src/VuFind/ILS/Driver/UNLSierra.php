@@ -108,7 +108,8 @@ class UNLSierra extends AbstractBase implements \VuFindHttp\HttpServiceAwareInte
             . "FROM sierra_view.bib_view "
             . "LEFT JOIN sierra_view.bib_record_item_record_link ON "
             . "(bib_view.id = bib_record_item_record_link.bib_record_id) "
-            . "WHERE bib_view.record_num = $1;";
+            . "WHERE bib_view.record_num = $1 "
+            . "ORDER BY items_display_order;";
         $record_ids = pg_query_params(
             $this->db, $get_record_ids_query, [$this->idStrip($id)]
         );
@@ -533,9 +534,9 @@ class UNLSierra extends AbstractBase implements \VuFindHttp\HttpServiceAwareInte
 	                        LEFT JOIN sierra_view.checkout
 	                        ON (item_view.id = checkout.item_record_id)
 	                        LEFT JOIN sierra_view.varfield_view
-	                        ON (item_view.id = varfield_view.record_id)
+	                        ON (item_view.id = varfield_view.record_id AND varfield_view.record_type_code='i')
 	                        WHERE item_view.id = $1
-	            			AND varfield_view.record_type_code='i'
+	            			
 	                        AND location_name.iii_language_id = '1';";
 	            pg_prepare($this->db, "prep_query", $query1);
 	            
