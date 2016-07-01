@@ -1,6 +1,0 @@
-<? if (!empty($this->authors)): ?><?=preg_replace('/\.[\s]*/','',$this->escapeHtml($this->authors))?>	 <? endif; ?>
-<? if (!empty($this->year)): ?><?=$this->escapeHtml($this->year)?>, <? endif; ?>
-&quot;<?=$this->title?>&quot;
-<span style="font-style:italic;"><?=$this->escapeHtml($this->journal)?></span> 
-<? if (!empty($this->volumeAndNo)): ?>, <?=$this->escapeHtml($this->volumeAndNo)?><? if (!empty($this->pageRange)): ?>:, <? endif; ?><? endif; ?>
-<? if (!empty($this->pageRange)): ?><?=$this->escapeHtml($this->pageRange)?><? endif; ?>.
