@@ -10,7 +10,7 @@ return array (
         'factories' => 
         array (
           'solrmarc' => 'VufindUNL\\RecordDriver\\Factory::getSolrMarc',
-          'solrdefault' => 'VufindUNL\\RecordDriver\\Factory::getSolrDefault',
+          'eit' => 'VufindUNL\\RecordDriver\\Factory::getEIT',
         ),
       ),
     ),

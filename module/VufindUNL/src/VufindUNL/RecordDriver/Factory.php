@@ -7,9 +7,9 @@ class Factory
 
     /**
      * Factory for SolrMarc record driver.
-     *
+     * 
      * @param ServiceManager $sm Service manager.
-     *
+     * 
      * @return SolrMarc
      */
     public static function getSolrMarc(\Zend\ServiceManager\ServiceManager $sm)
@@ -28,22 +28,20 @@ class Factory
         return $driver;
     }
 
+
     /**
-     * Factory for SolrDefault record driver.
+     * Factory for EIT record driver.
      *
      * @param ServiceManager $sm Service manager.
      *
-     * @return SolrDefault
+     * @return EIT
      */
-    public static function getSolrDefault(\Zend\ServiceManager\ServiceManager $sm)
+    public static function getEIT(\Zend\ServiceManager\ServiceManager $sm)
     {
-        $driver = new \VufindUNL\RecordDriver\SolrDefault(
-            $sm->getServiceLocator()->get('VuFind\Config')->get('config'),
-            null,
-            $sm->getServiceLocator()->get('VuFind\Config')->get('searches')
+        $eit = $sm->getServiceLocator()->get('VuFind\Config')->get('EIT');
+        return new \VufindUNL\RecordDriver\EIT(
+            $sm->getServiceLocator()->get('VuFind\Config')->get('config'), $eit, $eit
         );
-        $driver->attachSearchService($sm->getServiceLocator()->get('VuFind\Search'));
-        return $driver;
     }
 
 
