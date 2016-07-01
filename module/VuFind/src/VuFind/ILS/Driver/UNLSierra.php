@@ -403,7 +403,7 @@ class UNLSierra extends AbstractBase implements \VuFindHttp\HttpServiceAwareInte
             if (!empty($itemIds)){
             		$query1 = "SELECT item_view.item_status_code, "
                     . "location_name.name, "
-                    . "varfield_view.field_content, "
+                    . "REGEXP_REPLACE(varfield_view.field_content,'\|.',' ','g'), "
                     . "varfield_view.varfield_type_code, "
                     . "checkout.due_gmt, "
                     . "item_view.record_creation_date_gmt "
@@ -522,7 +522,7 @@ class UNLSierra extends AbstractBase implements \VuFindHttp\HttpServiceAwareInte
 	                        item_view.item_status_code,
 	                        location_name.name,
 	                        checkout.due_gmt,
-	                        varfield_view.field_content,
+	                        REGEXP_REPLACE(varfield_view.field_content,'\|.',' ','g'),
 	                        varfield_view.varfield_type_code,
 	                        item_view.record_creation_date_gmt
 	                        FROM
