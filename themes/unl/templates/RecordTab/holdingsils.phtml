@@ -47,29 +47,26 @@
     <a class="placehold modal-link" title="<?=$this->transEsc('request_place_text')?>" href="<?=$this->recordLink()->getRequestUrl($holdingTitleHold)?>"><i class="fa fa-flag"></i>&nbsp;<?=$this->transEsc('title_hold_place')?></a>
 <? endif; ?>
  
- <div id="holdings_tabs">
-<ul>
-<? if (!empty($urls) || $openUrlActive): ?>
-  <li><a href="#holdings_tab-internet"><?=$this->transEsc("Internet")?></a></li>
-<? endif; ?>
-
-<? $h_counter=1;?>
-<? if (count($holdings) > 0): ?>
-
-<? endif; ?>
-<? foreach ($holdings as $holding): ?>
-<? if ($holding['location'] != 'Via INTERNET'):?>
-<li><a href="#holdings_tab-<?=$h_counter?>">
-  <? $locationText = $this->transEsc('location_' . $holding['location'], array(), $holding['location']); ?>
-  <!-- not using  the  $holding['locationhref'] value to create a link so we can keep the tabs-->
-    <?=$locationText?>
-</a></li>
-<? endif; ?>
-<? $h_counter++;?>
-<? endforeach; ?>
-
-</ul>
-
+ 
+ <? if ((count($holdings) > 1) || (count($holdings) == 1 && !empty($holdings[0]['location']))) : ?>
+	<div id="holdings_tabs">
+		<ul>
+	<? if (!empty($urls) || $openUrlActive): ?>
+  		<li><a href="#holdings_tab-internet"><?=$this->transEsc("Internet")?></a></li>
+	<? endif; ?>
+  <? $h_counter=1;?>
+	<? foreach ($holdings as $holding): ?>
+		<? if ($holding['location'] != 'Via INTERNET'):?>
+			<li><a href="#holdings_tab-<?=$h_counter?>">
+  			<? $locationText = $this->transEsc('location_' . $holding['location'], array(), $holding['location']); ?>
+  			<!-- not using  the  $holding['locationhref'] value to create a link so we can keep the tabs-->
+    		<?=$locationText?>
+			</a></li>
+		<? endif; ?>
+	<? $h_counter++;?>
+	<? endforeach; ?>
+	</ul>
+<? endif;?>
 <? if (!empty($urls) || $openUrlActive): ?>
 <div id="holdings_tab-internet">
   <? if (!empty($urls)): ?>
@@ -143,7 +140,12 @@
 			  		<? $pubName = $publications[0]->getName(); ?>
 			  		<? $pubDate = $publications[0]->getDate(); ?>
 			  	<? endif; ?> 
-              	<? $illiadURL = urlencode("&aulast=".rawurlencode(($authors['main']))."&title=".rawurlencode($this->driver->getShortTitle(). ' ' . $this->driver->getSubtitle())."&date=".$pubDate."&pub=".$pubName."&edition=".$this->driver->getEdition()."&ESPNumber=".$this->driver->getCleanOCLCNum()."&isbn=".$this->driver->getCleanISBN()); ?>
+			  	<? if (!empty($authors['main'])):?>
+			  		<? $author_name = $authors['main'][0];?>
+			  	<? else:?>
+			  		<? $author_name = '';?>
+			  	<? endif; ?>
+              	<? $illiadURL = urlencode("&aulast=".rawurlencode(($author_name))."&title=".rawurlencode($this->driver->getShortTitle(). ' ' . $this->driver->getSubtitle())."&date=".$pubDate."&pub=".$pubName."&edition=".$this->driver->getEdition()."&ESPNumber=".$this->driver->getCleanOCLCNum()."&isbn=".$this->driver->getCleanISBN()); ?>
       			<? $webbridgeLink = $row['ILLRequestLink'].'?returnurl=http://'.$_SERVER['HTTP_HOST'].$this->recordLink()->getUrl($this->driver->getUniqueId()).'&resurl=https%3A%2F%2Funl.illiad.oclc.org%2Filliad%2Filliad.dll%2FOpenURL%3Fsid%3DUNLcat%26genre%3DBook'.$illiadURL.'&resname=Request+Item&linkid=0&linkloc=item'?>
                 <a class="<?=$checkILLRequest ? 'checkILLRequest ' : ''?>inlineblock modal-link placeILLRequest" href="<?=$this->recordLink()->getRequestUrl($webbridgeLink)?>"  title="<?=$this->transEsc("Request item")?>">&nbsp;<?=$this->transEsc("Request item")?></a>
               <? endif; ?>
@@ -198,7 +200,9 @@
 <? endif; ?> <!--  end if location is Via INTERNET -->
 <? $h_counter++;?>
 <? endforeach; ?>
+ <? if ((count($holdings) > 1) || (count($holdings) == 1 && !empty($holdings[0]['location']))) : ?>
 </div> <!--  end of holdings_tabs div -->
+<? endif;?>
 <? $history = $this->driver->getRealTimeHistory(); ?>
 <? if (is_array($history) && !empty($history)): ?>
 <h3><?=$this->transEsc("Most Recent Received Issues")?></h3>
