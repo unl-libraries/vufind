@@ -48,7 +48,7 @@
 <? endif; ?>
  
  
- <? if ((count($holdings) > 1) || (count($holdings) == 1 && !empty($holdings[0]['location']))) : ?>
+ <? if (count($holdings) > 1) : ?>
 	<div id="holdings_tabs">
 		<ul>
 	<? if (!empty($urls) || $openUrlActive): ?>
@@ -66,7 +66,15 @@
 	<? $h_counter++;?>
 	<? endforeach; ?>
 	</ul>
+<? elseif (count($holdings) ==1):?>
+	<? foreach ($holdings as $holding):?>
+		<? if (!empty($holding['location'])):?>
+			<? $locationText = $this->transEsc('location_' . $holding['location'], array(), $holding['location']); ?>  			
+	    	<h4><?=$locationText?></h4>
+		<? endif;?>
+	<? endforeach;?>
 <? endif;?>
+
 <? if (!empty($urls) || $openUrlActive): ?>
 <div id="holdings_tab-internet">
   <? if (!empty($urls)): ?>
@@ -105,12 +113,17 @@
       </tr>
     <? endif; ?>    
   <? endforeach; ?>
+  <? $itemRow = 1;?>
   <? foreach ($holding['items'] as $row): ?>
     <? $check = (isset($row['check']) && $row['check']); ?>
     <? $checkStorageRetrievalRequest = (isset($row['checkStorageRetrievalRequest']) && $row['checkStorageRetrievalRequest']); ?>
     <? $checkILLRequest = (isset($row['checkILLRequest']) && $row['checkILLRequest']); ?>
     <? if (isset($row['barcode']) && $row['barcode'] != ""): ?>
-      <tr vocab="http://schema.org/" typeof="Offer">
+    	<? if ($itemRow > 10 && (count($holding['items']) > 10)):?>    
+      		<tr vocab="http://schema.org/" typeof="Offer" class="more">      		
+    	<? else: ?>
+    		<tr vocab="http://schema.org/" typeof="Offer">
+     	<? endif; ?>     
         <th><!--<?=$this->transEsc("Copy")?>--> <?=$this->escapeHtml($row['number'])?></th>
         <td>
           <? if ($row['reserve'] == "Y"): ?>
@@ -181,9 +194,16 @@
           <? /* Declare that the item is to be borrowed, not for sale */ ?>
             <link property="businessFunction" href="http://purl.org/goodrelations/v1#LeaseOut" />
             <link property="itemOffered" href="#record" />
+        <? if ($itemRow == 10 &&(count($holding['items']) > 10)):?>
+      		<a href="" id="morelink" class="more_rows">Show more items +</a>
+      	<? elseif (($itemRow == count($holding['items'])) && (count($holding['items']) > 10)): ?>
+      		<a href="" id="lesslink" class="more_rows">Show less items -</a>
+      	<? endif;?>
         </td>
+
       </tr>
-    <? endif; ?>
+        <? $itemRow++;?>
+    <? endif; ?>  
   <? endforeach; ?>
   <? if (!empty($holding['purchase_history'])): ?>
     <tr>
@@ -215,9 +235,32 @@
 
 
 <script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
-<? if (count($holdings) > 0): ?>
+
 <script>
 $(function() {
+	<? if (count($holdings) > 1): ?>
     $( "#holdings_tabs" ).tabs();
-});</script>
-<? endif;?>
+    <? endif;?>
+     
+    var moretext = "Show more +";
+    var lesstext = "Show less";    
+  
+ 	$(".more").hide();
+    $("#morelink").click(function(){
+        $(this).hide();
+        $("#lesslink").show();
+        $(".more").toggle();        
+        return false;
+    });
+    $("#lesslink").click(function(){
+    	$(this).hide();
+    	$("#morelink").show();
+    	$(".more").toggle();
+    	return false;
+    });
+});
+
+</script>
+<style>
+.more_rows{float:right;}
+</style>
