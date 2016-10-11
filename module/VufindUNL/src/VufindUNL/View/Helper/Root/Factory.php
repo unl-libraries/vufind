@@ -18,4 +18,17 @@ class Factory
         return new Citation($sm->getServiceLocator()->get('VuFind\DateConverter'));
     }
 
+    /**
+     * Construct the ProxyUrl helper.
+     *
+     * @param ServiceManager $sm Service manager.
+     *
+     * @return ProxyUrl
+     */
+    public static function getProxyUrl(ServiceManager $sm)
+    {
+    	return new ProxyUrl(
+    			$sm->getServiceLocator()->get('VuFind\Config')->get('config')
+    			);
+    }
 }

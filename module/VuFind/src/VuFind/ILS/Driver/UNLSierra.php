@@ -173,16 +173,19 @@ class UNLSierra extends AbstractBase implements \VuFindHttp\HttpServiceAwareInte
             $results = pg_query_params(
                 $this->db, $query, [$this->idStrip($id)]
             );
-            $callnumberarray = pg_fetch_array($results, 0, PGSQL_NUM);
-            $callnumber = $callnumberarray[0];
-         if (pg_num_rows($results) > 0) {
-                $callnumberarray = pg_fetch_array($results, 0, PGSQL_NUM);
-                $callnumber = $callnumberarray[0];
-                // stripping subfield codes from call numbers
-                $callnumber = preg_replace('/\|(a|b)/', ' ', $callnumber);
-            } else {
-                $callnumber = '';
-            }
+	         if (pg_num_rows($results) > 0) {
+	               while( $callnumberarray = pg_fetch_array($results)){
+	                //$callnumber = $callnumberarray[0];
+	                // stripping subfield codes from call numbers
+	                $callnumber[] = preg_replace('/\|(a|b)/', ' ', $callnumberarray[0]);
+	               }             
+	        } else {
+	                $callnumber = '';
+	        }
+        }
+        if (is_array($callnumber)){        
+        	asort($callnumber);
+        	return join(';',$callnumber);
         }
         return $callnumber;
     }
@@ -325,14 +328,15 @@ class UNLSierra extends AbstractBase implements \VuFindHttp\HttpServiceAwareInte
     public function findReserves($course, $instructor, $department)
     {
         try {
-            if (isset($course)) {
+            if ($course != null) {
                 $coursenum = $course;
-            } elseif (isset($instructor)) {
+            } elseif ($instructor != null) {
                 // This deals with the "fake ID" hack explained in the getInstructors
                 // function
                 $instructor = explode("-", $instructor);
                 $coursenum = $instructor[0];
             }
+            if (!empty($coursenum)){
             $query = "SELECT DISTINCT bib_view.record_num "
                 . "FROM sierra_view.bib_view "
                 . "INNER JOIN sierra_view.bib_record_item_record_link "
@@ -345,8 +349,24 @@ class UNLSierra extends AbstractBase implements \VuFindHttp\HttpServiceAwareInte
                 . "varfield_view.record_id) "
                 . "WHERE varfield_view.record_num = $1;";
             $results = pg_query_params($this->db, $query, [$coursenum]);
+            }
+            else{
+            	$query = "SELECT DISTINCT bib_view.record_num "
+            			. "FROM sierra_view.bib_view "
+            			. "INNER JOIN sierra_view.bib_record_item_record_link "
+            			. "ON (bib_view.id = bib_record_item_record_link.bib_record_id) "
+            			. "INNER JOIN sierra_view.course_record_item_record_link "
+            			. "ON (course_record_item_record_link.item_record_id = "
+            			. "bib_record_item_record_link.item_record_id) "
+            			. "INNER JOIN sierra_view.varfield_view "
+            			. "ON (course_record_item_record_link.course_record_id = "
+            			. "varfield_view.record_id); ";
+            			
+            	$results = pg_query($this->db, $query);
+            }
             while ($resultArray = pg_fetch_row($results)) {
                 $bareNumber = $resultArray[0];
+               // print $bareNumber;
                 $fullNumber = $this->createFullId($bareNumber);
                 $reserves[]['BIB_ID'] = $fullNumber;
             }
@@ -427,7 +447,7 @@ class UNLSierra extends AbstractBase implements \VuFindHttp\HttpServiceAwareInte
 	                        $callnumber = $resultArray[2];
 	                    }
 	                }
-	
+
 	                $finalcallnumber = $this->processCallNumber($callnumber, $id);
 	
 	                $resultArray = pg_fetch_array($results1, 0);
@@ -899,4 +919,122 @@ class UNLSierra extends AbstractBase implements \VuFindHttp\HttpServiceAwareInte
     	return $result->getBody();
     }
     
+    function getCheckinHoldings($id)
+    {
+    	
+    	$psql = "SELECT DISTINCT holding_record_id from sierra_view.bib_record_holding_record_link as link WHERE
+link.bib_record_id=(SELECT id FROM sierra_view.bib_view WHERE bib_view.record_num={$this->idStrip($id)})";
+    	//$records[$i]{'LIBHAS'}=defined $bib_record_info->{'LIBHAS'} ? '"'.$bib_record_info->{'LIBHAS'}.'"':'';
+    	 
+    	try{
+    		$results = pg_query($psql);
+    	}
+    	catch (\Exception $e) {
+    		throw new ILSException($e->getMessage());
+    	}
+    	
+    	while ($row = pg_fetch_row($results)) {
+    	 	$checkinIds[]=$row[0];
+    	} 
+    	if (!empty($checkinIds)){	
+	    	$checkin_info = "SELECT location_code, 
+	    			checkinrecord.marc_tag,
+	    			erm.marc_tag as erm_marc_tag,
+					checkinrecord.occ_num,
+	    			erm.occ_num as erm_occ_num, 
+	    			checkinrecord.display_order,
+					tag,
+	    			field_type_code,
+	    			varfield_type_code,content, 
+	    			field_content from 
+	sierra_view.subfield_view as checkinrecord, sierra_view.bib_record_holding_record_link as link
+	LEFT JOIN sierra_view.holding_record_location ON holding_record_location.holding_record_id=link.holding_record_id
+	LEFT JOIN sierra_view.holding_record_erm_holding as erm ON erm.holding_record_id=link.holding_record_id
+	WHERE link.holding_record_id=checkinrecord.record_id AND
+	link.holding_record_id =$1 ORDER BY checkinrecord.marc_tag,erm.marc_tag, checkinrecord.display_order,erm.occ_num";
+	    	pg_prepare($this->db, "holdings_query", $checkin_info);
+	    	$record_holdings = array(); 
+	    	$i=0;
+	    	foreach ($checkinIds as $checkin) {
+	    		$results1 = pg_execute($this->db, "holdings_query", [$checkin]);
+	    		while ($holding =  pg_fetch_array($results1, NULL, PGSQL_ASSOC)) {
+	    			$identity=null;						
+					if ($holding['field_type_code'] == 'i'){ $identity = $holding['content'];}
+					if ($holding['marc_tag'] && $holding['content']) {
+						$record_holdings[$i]['holdings_location']=$holding['location_code'];
+						if ($identity){$record_holdings[$i]['holdings_location'] .= ' '.$identity;}						
+						if ($holding['tag']){$record_holdings[$i]['holdings'][$holding['marc_tag']][$holding['occ_num']][$holding['tag']]=$holding['content'];}
+						else{
+							$records_holdings[$i]['holdings'][$holding['marc_tag']][$holding['occ_num']]['']=$holding['content'];
+						}					
+					}
+					elseif (!empty($holding['erm_marc_tag']) && !empty($holding['field_content'])){
+						$record_holdings[$i]['holdings_location']=$holding['location_code'];
+						if ($identity){$record_holdings[$i]['holdings_location'] .= ' '.$identity;} 
+						$record_holdings[$i]['holdings'][$holding['erm_marc_tag']][$holding['erm_occ_num']]['erm']=$holding['field_content'];
+						
+					}
+					elseif ($holding['field_type_code'] == 'h'){
+						# these are the full text LIB HAS holdings for inactive items?
+						$record_holdings[$i]['holdings_location']=$holding['location_code'];					
+						if ($identity){$record_holdings[$i]['holdings_location'] .= ' '.$identity;} 
+						$record_holdings[$i]['holdings']['LIBHAS_TEXT'][$holding['occ_num']]=$holding['content'];
+						
+					}							
+				}
+				if ($record_holdings[$i]['holdings']){$i++;}	
+	    	}
+	    	$captions = array();
+	    	foreach ($record_holdings as $holding){
+	    		foreach ($holding['holdings']['853'] as $caption){
+	    			foreach ($caption as $caption_indicator=>$caption_value){
+	    				if ($caption_indicator != 8){
+	    					if ($caption_indicator == 'erm'){
+	    						//erm holdings - see line 225 of GetHoldingsFromBib.pl
+	    					}
+	    				}
+	    				else{
+	    					$captions[$caption[8]][$caption_indicator]=$caption[$caption_indicator];
+	    				}
+	    			}
+	    		}
+	    		$holding_texts = array();
+	    		$entry863index = 0;
+	    		foreach ($holding['holdings']['863'] as $entry863 ){
+	    			$v = 0;
+	    			if (!empty($entry863['erm'])) {
+	    				//erm pieces	    				
+	    			}
+	    			if (!empty($entry863['8'])){
+	    				$level = $entry863['8'];
+	    				$levels = split('\.',$level);
+	    				foreach ($entry863 as $holding_indicator=>$holding_value){
+	    					if ($holding_indicator != '8'){
+	    						$caption_format = $captions[$levels[0]][$holding_indicator];
+	    						if (in_array($holding_indicator,range("a","h"))){
+	    							//regular enumeration
+	    							if (!empty($caption_format)){
+	    								$v=0;
+	    								foreach (split("-",$entry863[$holding_indicator]) as $value){
+	    									if (!empty($value)){
+	    										if (!empty($holding_texts[$levels[0]][$entry863index][$v])){
+	    											if (preg_match('/\(.*\)/',$caption_format)){
+	    												$caption = $caption_format;
+	    											
+	    											}
+	    										}
+	    									}
+	    								}
+	    							}
+	    						}
+	    					}
+	    				}
+	    			}
+	    			
+	    		}
+	    	}
+	    	return $record_holdings;
+    	}
+    	else return null;
+    }
 }
