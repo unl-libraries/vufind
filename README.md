@@ -4,4 +4,4 @@ Contains configuration settings that need to be shared among the developers, as 
 
 Changes were made in the local folder to faciliate updates wherever possible.
 
-Currently the code is for version 3 of vufind.
+This code is for version 3.1.0 of vufind.
