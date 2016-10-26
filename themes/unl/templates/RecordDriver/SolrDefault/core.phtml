@@ -221,6 +221,25 @@
       </tr>
       <? endif; ?>
 
+	<!--  adding call number rendering from bib record - this helps in the case of no ILS access for item record holdings -->
+	 <? $callnos = $this->driver->getAllCallNumbers(); if (!empty($callnos)): ?>
+      <tr>
+        <th><?=$this->transEsc('Call Number')?>: </th>
+        <td>
+          <? foreach ($callnos as $field): ?>
+          <div>
+            <? $callno = ''; ?>
+            <? if(count($field) == 1) $field = explode('--', $field[0]); ?>
+            <? $i = 0; foreach ($field as $subfield): ?>
+              
+              <? $callno = trim($callno . ' ' . $subfield); ?>              
+            <? endforeach; ?>
+            <?=$callno?>
+          </div>
+          <? endforeach; ?>
+        </td>
+      </tr>
+      <? endif; ?>
       <? $childRecordCount = $this->driver->tryMethod('getChildRecordCount'); if ($childRecordCount): ?>
       <tr>
         <th><?=$this->transEsc('child_records')?>: </th>
