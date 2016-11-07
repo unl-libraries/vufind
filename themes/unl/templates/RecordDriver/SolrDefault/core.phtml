@@ -105,6 +105,20 @@
         </td>
       </tr>
       <? endif; ?>
+	  
+      <? if (method_exists($this->driver, 'getAltTitles')):?>
+	<? $altTitles = $this->driver->getAltTitles(); ?>
+      	<? if (!empty($altTitles)): ?>
+	      <tr>
+        	<th>Alternate Title:</th>
+	        <td>
+        	  <? foreach($altTitles as $field): ?>
+	            <?=$field?><br/>
+        	  <? endforeach; ?>
+	        </td>
+	      </tr>
+	 <? endif; ?>	
+      <? endif; ?>
 
       <? $authors = $this->driver->getDeduplicatedAuthors(); ?>
       <? if (isset($authors['main']) && !empty($authors['main'])): ?>
@@ -222,24 +236,43 @@
       <? endif; ?>
 
 	<!--  adding call number rendering from bib record - this helps in the case of no ILS access for item record holdings -->
+	 <? if (method_exists($this->driver, 'getAllCallNumbers')):?>
 	 <? $callnos = $this->driver->getAllCallNumbers(); if (!empty($callnos)): ?>
-      <tr>
-        <th><?=$this->transEsc('Call Number')?>: </th>
-        <td>
-          <? foreach ($callnos as $field): ?>
-          <div>
-            <? $callno = ''; ?>
-            <? if(count($field) == 1) $field = explode('--', $field[0]); ?>
-            <? $i = 0; foreach ($field as $subfield): ?>
-              
-              <? $callno = trim($callno . ' ' . $subfield); ?>              
-            <? endforeach; ?>
-            <?=$callno?>
-          </div>
-          <? endforeach; ?>
-        </td>
-      </tr>
+	      <tr>
+	        <th><?=$this->transEsc('Call Number')?>: </th>
+	        <td>
+	          <? foreach ($callnos as $field): ?>
+	          <div>
+	            <? $callno = ''; ?>
+	            <? if(count($field) == 1) $field = explode('--', $field[0]); ?>
+	            <? $i = 0; foreach ($field as $subfield): ?>
+	              
+	              <? $callno = trim($callno . ' ' . $subfield); ?>              
+	            <? endforeach; ?>
+	            <?=$callno?>
+	          </div>
+	          <? endforeach; ?>
+	        </td>
+	      </tr>
+	      <? endif; ?>
+      <? endif; ?>      
+      
+      <!--  location from bib record in case no ILS access -->
+       <? if (method_exists($this->driver, 'getSolrField')):?>
+	 <? $location = $this->driver->getSolrField('location_str_mv'); if (!empty($location)): ?>
+	      <tr>
+	        <th><?=$this->transEsc('Located')?>: </th>
+	        <td>
+	          <? foreach ($location as $loc): ?>
+	          <div>
+	            <?=$loc?>
+	          </div>
+	          <? endforeach; ?>
+	        </td>
+	      </tr>
+	      <? endif; ?>
       <? endif; ?>
+      
       <? $childRecordCount = $this->driver->tryMethod('getChildRecordCount'); if ($childRecordCount): ?>
       <tr>
         <th><?=$this->transEsc('child_records')?>: </th>
@@ -260,7 +293,7 @@
         <th><?=$this->transEsc('Online Access')?>: </th>
         <td>
           <? foreach ($urls as $current): ?>
-            <a href="<?=$this->escapeHtmlAttr($this->proxyUrl($current['url']))?>"><?=$this->escapeHtml($current['desc'])?></a><br/>
+            <a href="<?=$this->escapeHtmlAttr($this->proxyUrl($current['url']))?>"><?=$this->escapeHtml(($current['url']==$current['desc']?$this->proxyUrl($current['desc']):$current['desc']))?></a><br/>
           <? endforeach; ?>
           <? if ($openUrlActive): ?>
             <?=$openUrl->renderTemplate()?><br/>
@@ -268,7 +301,44 @@
         </td>
       </tr>
       <? endif; ?>
-
+      
+  <!--  adding eresource Notes -->
+      <!--  general note -->
+      <? if (method_exists($this->driver, 'getPublicNotes')):?>
+      <? $publicNotes = $this->driver->getPublicNotes();?>
+      <? if (!empty($publicNotes)):?>
+      	<tr>
+      		<th>Public Notes</th>
+      		<td>
+      			<? foreach ($publicNotes as $note):?>
+      				<?=$this->escapeHtml($note)?>
+      			<? endforeach; ?>
+      		</td>
+      	</tr>
+      <? endif; ?>
+      <? endif; ?>
+      <!--  authorized user note -->
+      <? if (method_exists($this->driver, 'getAuthorizedUserNote')):?>
+      	<? $authNote = $this->driver->getAuthorizedUserNote()?>
+      	<? if (!empty($authNote)):?>
+      		<tr>
+      			<th>Authorized Users</th>
+      			<td>
+      				<?=$this->escapeHtml($authNote)?>
+      			</td>
+      		</tr>		
+      	<? endif; ?>
+	  <? endif;?>
+	  <!--  checkin holdings -->
+	  <? //$checkin_holdings = $this->ils()->getCheckinHoldings($this->driver->getUniqueID());?>
+	  <? if (!empty($checkin_holdings)):?>
+	  <tr>
+		  <th>Checking holdings</th>
+		  <td>
+		  <? print_r($checkin_holdings);?>
+		  </td>
+	  </tr>
+	  <? endif;?>
       <? $recordLinks = $this->driver->getAllRecordLinks(); ?>
       <? if(!empty($recordLinks)): ?>
         <tr>
