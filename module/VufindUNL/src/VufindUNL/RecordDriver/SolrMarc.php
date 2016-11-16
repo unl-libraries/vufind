@@ -65,7 +65,7 @@ class SolrMarc extends \VuFind\RecordDriver\SolrMarc
 		 */
 		public function getAuthorizedUserNote()
 		{
-			return (isset($this->fields['authUsers_str'])) ? $this->fields['authUsers_str'] : '';
+			return isset($this->fields['authUsers_str']) ? $this->fields['authUsers_str'] : '';
 		}
 	
 		/**
@@ -85,7 +85,7 @@ class SolrMarc extends \VuFind\RecordDriver\SolrMarc
 		{
 			// These are the fields that may contain subject headings:
 			$fields = [
-					'099', '090', '050'
+					 '090', '050', '099', '086', '092'
 			];
 			// This is all the collected data:
 			$retval = [];
