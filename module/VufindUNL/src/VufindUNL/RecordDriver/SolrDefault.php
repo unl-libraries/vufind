@@ -3,6 +3,16 @@ namespace VufindUNL\RecordDriver;
 
 class SolrDefault extends \VuFind\RecordDriver\SolrDefault
 {
+	
+	/**
+	 * These Solr fields should be used for snippets if available (listed in order
+	 * of preference).
+	 *
+	 * @var array
+	 */
+	protected $preferredSnippetFields = [
+			'title_alt','contents', 'topic'
+	];
 /**
 	 * Return the value(s) of a solr field without using the marc tags
 	 * useful for joined fields

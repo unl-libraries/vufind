@@ -10,17 +10,16 @@ return array (
         'factories' => 
         array (
            'solrdefault' =>'VufindUNL\\RecordDriver\\Factory::getSolrDefault',
-          'solrmarc' => 'VufindUNL\\RecordDriver\\Factory::getSolrMarc',
-          'eit' => 'VufindUNL\\RecordDriver\\Factory::getEIT',
+          'solrmarc' => 'VufindUNL\\RecordDriver\\Factory::getSolrMarc',          
         ),
       ),
     ),
   ),
-  'controllers' => 
-  array (
-    'invokables' => 
-    array (
-      'cover' => 'VufindUNL\\Controller\\CoverController',
-    ),
-  ),
+//   'controllers' => 
+//   array (
+//     'invokables' => 
+//     array (
+//       'cover' => 'VufindUNL\\Controller\\CoverController',
+//     ),
+//   ),
 );

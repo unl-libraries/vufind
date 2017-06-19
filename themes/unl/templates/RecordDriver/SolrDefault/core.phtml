@@ -28,7 +28,6 @@
       <? if($cover): ?>
         <?=$cover?>
       <? endif; ?>
-
       <? /* Display qrcode if appropriate: */ ?>
       <? if($QRCode): ?>
         <span class="hidden-xs">
@@ -249,7 +248,16 @@
 	              
 	              <? $callno = trim($callno . ' ' . $subfield); ?>              
 	            <? endforeach; ?>
-	            <?=$callno?>
+	            <? if (method_exists($this->driver, 'getCallNumberLocatorLink')):?>
+	            	<? $callnolink = $this->driver->getCallNumberLocatorLink($this->driver->getUniqueID(),$callno); if ($callnolink):?>
+	            		<a id="callnobox" href="<?=$callnolink?>" ><?=$callno?></a>            	
+	            		
+	            	<? else:?>
+	            		<a href="http://libraries.unl.edu/call-number-locator"><?=$callno?></a>
+	            	<? endif; ?>
+	            <? else: ?>
+	            	<a href="http://libraries.unl.edu/call-number-locator"><?=$callno?></a>
+	            <? endif; ?>
 	          </div>
 	          <? endforeach; ?>
 	        </td>
@@ -265,9 +273,23 @@
 	        <td>
 	          <? foreach ($location as $loc): ?>
 	          <div>
-	            <?=$loc?>
+	            <a href="http://libraries.unl.edu/call-number-locator"><?=$loc?></a>
 	          </div>
 	          <? endforeach; ?>
+	        </td>
+	      </tr>
+	      <? endif; ?>
+      <? endif; ?>
+      
+      <!--  repository url -->
+             <? if (method_exists($this->driver, 'getSolrField')):?>
+	 <? $repository_url = $this->driver->getSolrField('repository_url_str'); if (!empty($repository_url)): ?>
+	      <tr>
+	        <th>Repository: </th>
+	        <td>	        
+	          <div>
+	            <a href="<?=$repository_url?>"><?=$repository_url?></a>
+	          </div>	          
 	        </td>
 	      </tr>
 	      <? endif; ?>
@@ -317,9 +339,8 @@
       	</tr>
       <? endif; ?>
       <? endif; ?>
-      <!--  authorized user note -->
-      <? if (method_exists($this->driver, 'getAuthorizedUserNote')):?>
-      	<? $authNote = $this->driver->getAuthorizedUserNote()?>
+      <!--  authorized user note -->      
+      	<? $authNote = $this->driver->tryMethod('getAuthorizedUserNote');?>
       	<? if (!empty($authNote)):?>
       		<tr>
       			<th>Authorized Users</th>
@@ -328,12 +349,12 @@
       			</td>
       		</tr>		
       	<? endif; ?>
-	  <? endif;?>
+
 	  <!--  checkin holdings -->
-	  <? //$checkin_holdings = $this->ils()->getCheckinHoldings($this->driver->getUniqueID());?>
+	  <? $checkin_holdings = $this->ils()->getCheckinHoldings($this->driver->getUniqueID());?>
 	  <? if (!empty($checkin_holdings)):?>
 	  <tr>
-		  <th>Checking holdings</th>
+		  <th>Checkin holdings</th>
 		  <td>
 		  <? print_r($checkin_holdings);?>
 		  </td>
