@@ -21,20 +21,12 @@
 
 <?=$this->context($this)->renderInContext('librarycards/selectcard.phtml', array('user' => $this->auth()->isLoggedIn())); ?>
 
-<? if ($offlineMode == "ils-offline"): ?>
-  <div class="alert alert-warning">
-    <h2><?=$this->transEsc('ils_offline_title')?></h2>
-    <p><strong><?=$this->transEsc('ils_offline_status')?></strong></p>
-    <p><?=$this->transEsc('ils_offline_holdings_message')?></p>
-    <? $supportEmail = $this->escapeHtmlAttr($this->systemEmail()); ?>
-    <p><a href="mailto:<?=$supportEmail?>"><?=$supportEmail?></a></p>
-  </div>
-<? endif; ?>
+<?=($offlineMode == "ils-offline") ? $this->render('Helpers/ils-offline.phtml', ['offlineModeMsg' => 'ils_offline_holdings_message']) : ''?>
 <? if (($this->ils()->getHoldsMode() == 'driver' && !empty($holdings)) || $this->ils()->getTitleHoldsMode() == 'driver'): ?>
   <? if ($account->loginEnabled() && $offlineMode != 'ils-offline'): ?>
     <? if (!$user): ?>
       <div class="alert alert-info">
-        <a href="<?=$this->recordLink()->getTabUrl($this->driver, 'Holdings')?>?login=true&amp;catalogLogin=true"><?=$this->transEsc("Login")?></a> <?=$this->transEsc("hold_login")?>
+        <a href="<?=$this->recordLink()->getTabUrl($this->driver, 'Holdings')?>?login=true&amp;catalogLogin=true" data-lightbox><?=$this->transEsc("Login")?></a> <?=$this->transEsc("hold_login")?>
       </div>
     <? elseif (!$user->cat_username): ?>
       <div class="alert alert-info">
@@ -44,7 +36,7 @@
   <? endif; ?>
 <? endif; ?>
 <? $holdingTitleHold = $this->driver->tryMethod('getRealTimeTitleHold'); if (!empty($holdingTitleHold)): ?>
-    <a class="placehold modal-link" title="<?=$this->transEsc('request_place_text')?>" href="<?=$this->recordLink()->getRequestUrl($holdingTitleHold)?>"><i class="fa fa-flag"></i>&nbsp;<?=$this->transEsc('title_hold_place')?></a>
+    <a class="placehold" data-lightbox title="<?=$this->transEsc('request_place_text')?>" href="<?=$this->recordLink()->getRequestUrl($holdingTitleHold)?>"><i class="fa fa-flag" aria-hidden="true"></i>&nbsp;<?=$this->transEsc('title_hold_place')?></a>
 <? endif; ?>
  
  
@@ -95,29 +87,39 @@
     <th><?=$this->transEsc("Call Number")?>: </th>
     <td width="50%">
       <? foreach ($callNos as $callNo): ?>
-        <?=$this->escapeHtml($callNo)?><br />
+        <? if ($this->callnumberHandler): ?>
+          <a href="<?=$this->url('alphabrowse-home') ?>?source=<?=$this->escapeHtmlAttr($this->callnumberHandler) ?>&amp;from=<?=$this->escapeHtmlAttr($callNo) ?>"><?=$this->escapeHtml($callNo)?></a>
+        <? else: ?>
+          <?=$this->escapeHtml($callNo)?>
+        <? endif; ?>
+        <br />
       <? endforeach; ?>
     </td>
   </tr>
   <? endif; ?>
-  <? foreach ($this->ils()->getHoldingsTextFieldNames() as $textField): ?>
-    <? if (!empty($holding[$textField])): ?>
-      <tr>
-        <? // Translation for summary is a special case for backwards-compatibility ?>
-        <th><?=$textField == 'summary' ? $this->transEsc("Volume Holdings") : $this->transEsc(ucfirst($textField))?>:</th>
-        <td>
-          <? foreach ($holding[$textField] as $current): ?>
-            <?=$this->escapeHtml($current)?><br/>
-          <? endforeach; ?>
-        </td>
-      </tr>
-    <? endif; ?>    
-  <? endforeach; ?>
-  <? $itemRow = 1;?>
+  <? if (isset($holding['textfields'])): foreach ($holding['textfields'] as $textFieldName => $textFields): ?>
+    <tr>
+      <? // Translation for summary is a special case for backwards-compatibility ?>
+      <th><?=$textFieldName == 'summary' ? $this->transEsc("Volume Holdings") : $this->transEsc(ucfirst($textFieldName))?>:</th>
+      <td>
+        <? foreach ($textFields as $current): ?>
+          <?=$this->escapeHtml($current)?><br/>
+        <? endforeach; ?>
+      </td>
+    </tr>
+  <? endforeach; endif; ?>
+<? $itemRow = 1;?>
   <? foreach ($holding['items'] as $row): ?>
-    <? $check = (isset($row['check']) && $row['check']); ?>
-    <? $checkStorageRetrievalRequest = (isset($row['checkStorageRetrievalRequest']) && $row['checkStorageRetrievalRequest']); ?>
-    <? $checkILLRequest = (isset($row['checkILLRequest']) && $row['checkILLRequest']); ?>
+    <?
+      // AJAX Check record?
+      $check = isset($row['check']) && $row['check'];
+      $checkStorageRetrievalRequest = isset($row['checkStorageRetrievalRequest']) && $row['checkStorageRetrievalRequest'];
+      $checkILLRequest = isset($row['checkILLRequest']) && $row['checkILLRequest'];
+      // AJAX block record?
+      $block = !$check && isset($row['addLink']) && $row['addLink'] === 'block';
+      $blockStorageRetrievalRequest = !$checkStorageRetrievalRequest && isset($row['addStorageRetrievalRequestLink']) && $row['addStorageRetrievalRequestLink'] === 'block';
+      $blockILLRequest = !$checkILLRequest && isset($row['addILLRequestLink']) && $row['addILLRequestLink'] === 'block';
+    ?>
     <? if (isset($row['barcode']) && $row['barcode'] != ""): ?>
     	<? if ($itemRow > 10 && (count($holding['items']) > 10)):?>    
       		<tr vocab="http://schema.org/" typeof="Offer" class="more">      		
@@ -140,13 +142,13 @@
             <? if ($row['availability']): ?>
               <? /* Begin Available Items (Holds) */ ?>
                <span class="text-success"><?=$this->transEsc("Available")?><link property="availability" href="http://schema.org/InStock" /></span>
-              <? if (isset($row['link']) && $row['link']): ?>
-                <a style="display:inline-block" class="<?=$check ? 'checkRequest ' : ''?>inlineblock modal-link placehold" href="<?=$this->recordLink()->getRequestUrl($row['link'])?>" title="<?=$this->transEsc($check ? "Check Hold" : "Place a Hold")?>"><i class="fa fa-flag"></i>&nbsp;<?=$this->transEsc($check ? "Check Hold" : "Place a Hold")?></a>
+              <? if (!$block && isset($row['link']) && $row['link']): ?>
+                <a class="<?=$check ? 'checkRequest ' : ''?>placehold" data-lightbox href="<?=$this->recordLink()->getRequestUrl($row['link'])?>"><i class="fa fa-flag" aria-hidden="true"></i>&nbsp;<?=$this->transEsc($check ? "Check Hold" : "Place a Hold")?></a>
               <? endif; ?>
-              <? if (isset($row['storageRetrievalRequestLink']) && $row['storageRetrievalRequestLink']): ?>
-                <a class="<?=$checkStorageRetrievalRequest ? 'checkStorageRetrievalRequest ' : ''?>modal-link placeStorageRetrievalRequest" href="<?=$this->recordLink()->getRequestUrl($row['storageRetrievalRequestLink'])?>" title="<?=$this->transEsc($checkStorageRetrievalRequest ? "storage_retrieval_request_check_text" : "storage_retrieval_request_place_text")?>"><i class="fa fa-flag"></i>&nbsp;<?=$this->transEsc($checkStorageRetrievalRequest ? "storage_retrieval_request_check_text" : "storage_retrieval_request_place_text")?></a>
+              <? if (!$blockStorageRetrievalRequest && isset($row['storageRetrievalRequestLink']) && $row['storageRetrievalRequestLink']): ?>
+                <a class="<?=$checkStorageRetrievalRequest ? 'checkStorageRetrievalRequest ' : ''?> placeStorageRetrievalRequest" data-lightbox href="<?=$this->recordLink()->getRequestUrl($row['storageRetrievalRequestLink'])?>"><i class="fa fa-flag" aria-hidden="true"></i>&nbsp;<?=$this->transEsc($checkStorageRetrievalRequest ? "storage_retrieval_request_check_text" : "storage_retrieval_request_place_text")?></a>
               <? endif; ?>
-              <? if (isset($row['ILLRequestLink']) && $row['ILLRequestLink']):?> 
+              <? if (!$blockILLRequest && isset($row['ILLRequestLink']) && $row['ILLRequestLink']):?> 
               	<? $authors = $this->driver->getDeduplicatedAuthors();?>
               	<? $publications = $this->driver->getPublicationDetails();?>
 			  	<? if (!empty($publications)) :?>
@@ -160,7 +162,7 @@
 			  	<? endif; ?>
               	<? $illiadURL = urlencode("&aulast=".rawurlencode(($author_name))."&title=".rawurlencode($this->driver->getShortTitle(). ' ' . $this->driver->getSubtitle())."&date=".$pubDate."&pub=".$pubName."&edition=".$this->driver->getEdition()."&ESPNumber=".$this->driver->getCleanOCLCNum()."&isbn=".$this->driver->getCleanISBN()); ?>
       			<? $webbridgeLink = $row['ILLRequestLink'].'?returnurl=http://'.$_SERVER['HTTP_HOST'].$this->recordLink()->getUrl($this->driver->getUniqueId()).'&resurl=https%3A%2F%2Funl.illiad.oclc.org%2Filliad%2Filliad.dll%2FOpenURL%3Fsid%3DUNLcat%26genre%3DBook'.$illiadURL.'&resname=Request+Item&linkid=0&linkloc=item'?>
-                <a class="<?=$checkILLRequest ? 'checkILLRequest ' : ''?>inlineblock modal-link placeILLRequest" href="<?=$this->recordLink()->getRequestUrl($webbridgeLink)?>"  title="<?=$this->transEsc("Request item")?>">&nbsp;<?=$this->transEsc("Request item")?></a>
+                <a class="<?=$checkILLRequest ? 'checkILLRequest ' : ''?>inlineblock modal-link placeILLRequest" data-lightbox href="<?=$this->recordLink()->getRequestUrl($webbridgeLink)?>"  title="<?=$this->transEsc("Request item")?>">&nbsp;<?=$this->transEsc("Request item")?></a>
               <? endif; ?>
             <? else: ?>
               <? /* Begin Unavailable Items (Recalls) */ ?>
@@ -176,9 +178,19 @@
               <? if (isset($row['requests_placed']) && $row['requests_placed'] > 0): ?>
                 <span><?=$this->transEsc("Requests")?>: <?=$this->escapeHtml($row['requests_placed'])?></span>
               <? endif; ?>
-              <? if (isset($row['link']) && $row['link']): ?>
-                <a class="<?=$check ? 'checkRequest' : ''?> modal-link inlineblock placehold" href="<?=$this->recordLink()->getRequestUrl($row['link'])?>"><i class="fa fa-flag"></i>&nbsp;<?=$this->transEsc($check ? "Check Recall" : "Recall This")?></a>
+              <? if (!$block && isset($row['link']) && $row['link']): ?>
+                <a class="<?=$check ? 'checkRequest' : ''?> placehold" data-lightbox href="<?=$this->recordLink()->getRequestUrl($row['link'])?>"><i class="fa fa-flag" aria-hidden="true"></i>&nbsp;<?=$this->transEsc($check ? "Check Recall" : "Recall This")?></a>
               <? endif; ?>
+            <? endif; ?>
+            <? if (isset($row['item_notes'])): ?>
+              <div class="item-notes">
+                <b><?=$this->transEsc("Item Notes")?>:</b>
+                <ul>
+                  <? foreach ($row['item_notes'] as $item_note): ?>
+                    <li><?=$this->escapeHtml($item_note) ?></li>
+                  <? endforeach; ?>
+                </ul>
+              </div>
             <? endif; ?>
           <? endif; ?>
           <? /* Embed item structured data: library, barcode, call number */ ?>
