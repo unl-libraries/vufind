@@ -1,3 +1,4 @@
+
 <?php
 
 /**
@@ -177,7 +178,7 @@ class UNLSierra extends AbstractBase implements \VuFindHttp\HttpServiceAwareInte
 	               while( $callnumberarray = pg_fetch_array($results)){
 	                //$callnumber = $callnumberarray[0];
 	                // stripping subfield codes from call numbers
-	                $callnumber[] = preg_replace('/\|(a|b)/', ' ', $callnumberarray[0]);
+	                $callnumber[] = preg_replace('/\|(a|b|f)/', ' ', $callnumberarray[0]);
 	               }             
 	        } else {
 	                $callnumber = '';
