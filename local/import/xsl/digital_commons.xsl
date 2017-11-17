@@ -5,7 +5,8 @@
     xmlns:php="http://php.net/xsl"
     xmlns:xlink="http://www.w3.org/2001/XMLSchema-instance">
     <xsl:output method="xml" indent="yes" encoding="utf-8"/>
-
+	<xsl:param name="track_changes">1</xsl:param>
+	<xsl:param name="solr_core">biblio</xsl:param>
     <xsl:template match="/collection">
 	<add>
 	   <xsl:for-each select="//oai_dc:dc">
@@ -134,7 +135,7 @@
                         <xsl:value-of select="dc:title[normalize-space()]" />
                     </field>
      				<field name="title_sort">
-                        <xsl:value-of select="php:function('VuFind::stripArticles', string(//dc:title[normalize-space()]))"/>
+                        <xsl:value-of select="php:function('VuFind::stripArticles', string(dc:title[normalize-space()]))"/>
                     </field>
                 </xsl:if>
                 
@@ -187,6 +188,15 @@
                     	</field>
                 	</xsl:if>
                 </xsl:for-each>
+                
+                <xsl:if test="$track_changes != 0">
+				    <field name="first_indexed">
+				        <xsl:value-of select="php:function('VuFind::getFirstIndexed', $solr_core, string(identifier), string(datestamp))"/>
+				    </field>
+				    <field name="last_indexed">
+				        <xsl:value-of select="php:function('VuFind::getLastIndexed', $solr_core, string(identifier), string(datestamp))"/>
+				    </field>
+				</xsl:if>
             </doc>
 	</xsl:for-each>
 	</add>
