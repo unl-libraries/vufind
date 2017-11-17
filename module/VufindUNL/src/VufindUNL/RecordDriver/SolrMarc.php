@@ -62,7 +62,7 @@ class SolrMarc extends \VuFind\RecordDriver\SolrMarc
 		{
 			// These are the fields that may contain subject headings:
 			$fields = [
-					 '090', '050', '099', '086', '092'
+					 '090', '050', '060', '096','099', '086', '092'
 			];
 			// This is all the collected data:
 			$retval = [];
